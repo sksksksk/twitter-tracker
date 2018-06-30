@@ -88,7 +88,6 @@ class TT_Twitter_Authentication {
 	}
 
 	public function load_settings() {
-
 		// Denied?
 		if ( isset( $_GET[ 'denied' ] ) ) {
 			if ( $_GET[ 'denied' ] == $this->creds[ 'oauth_token' ] ) {
@@ -131,7 +130,6 @@ class TT_Twitter_Authentication {
 
 			$connection = $this->oauth_connection();
 			$request_token_response = $connection->getRequestToken( admin_url( 'options-general.php?page=tt_auth' ) );
-			
 			$new_creds = array(
 				'oauth_token'        => $request_token_response[ 'oauth_token' ],
 				'oauth_token_secret' => $request_token_response[ 'oauth_token_secret' ],
@@ -246,7 +244,11 @@ class TT_Twitter_Authentication {
 	
 	<?php screen_icon(); ?>
 	<h2 class="title"><?php _e( 'Twitter Tracker', 'twitter-tracker' ); ?></h2>
-	
+	<?php 
+	if (!trim(get_theme_mod( 'consumer_key' )) || ! trim(get_theme_mod( 'consumer_secret' )) ) {
+		echo "<p style='color:red'>No consumer key and secret set in customizer options for twitter tracker</p>";
+	}
+	?>
 	<p><?php _e( 'Note that the restrictions registered for this plugin with Twitter mean that it can only read your tweets and mentions, and see your followers, it cannot tweet on your behalf or see DMs.', 'twitter-tracker' ); ?></p>
 
 	<form action="" method="post">
@@ -283,13 +285,20 @@ class TT_Twitter_Authentication {
 
 	public function load_creds() {
 		$creds_defaults = array(
-			'consumer_key'       => 'XV7HZZKjYpPtGwhsTZY6A',
-			'consumer_secret'    => 'etSpBLB6951otLgmAsKP67oV7ALKe8ipAaKe5OIyU',
+			'consumer_key'       => trim(get_theme_mod( 'consumer_key' )),
+			'consumer_secret'    => trim(get_theme_mod( 'consumer_secret' )),
 			'oauth_token'        => null,
 			'oauth_token_secret' => null,
 			'authenticated'      => false,
 			'user_id'            => null,
-			'screen_name'        => null,
+			'screen_name'        => null
+
+			/*
+			'oauth_token_secret' => 'k3LiGgvn5SKCaam8rqbD6PBoyV8nTvW0kyeCk40xNVg2v',
+			'authenticated'      => false,
+			'user_id'            => '831445423',
+			'screen_name'        => 'stef_karas',
+			*/
 		);
 		$creds_option = get_option( 'tt_twitter_creds', array() );
 		$this->creds = wp_parse_args( $creds_option, $creds_defaults );

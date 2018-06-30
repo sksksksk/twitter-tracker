@@ -14,6 +14,7 @@ class TT_OAuthConsumer {
     $this->key = $key;
     $this->secret = $secret;
     $this->callback_url = $callback_url;
+
   }
 
   function __toString() {

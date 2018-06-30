@@ -122,6 +122,9 @@ class TwitterTracker_Plugin
 		$this->plugin_name = $name;
 
 		$this->add_action ('init', 'load_locale');
+
+		$this->add_action ('customize_register', 'twitter_tracker_customizer_settings');
+
 	}
 	
 	function load_locale ()
@@ -151,6 +154,30 @@ class TwitterTracker_Plugin
 		add_action ($action, array (&$this, $function == '' ? $action : $function), $priority, $accepted_args);
 	}
 
+
+	function twitter_tracker_customizer_settings($wp_customize) {
+	    $wp_customize->add_section('twitter_tracker_options', array(
+		    'title' => 'Twitter Tracker Options',
+		    'description' => '',
+		    'priority' => 120,
+	    ));
+
+	    $wp_customize->add_setting('consumer_key');
+	    $wp_customize->add_setting('consumer_secret');
+
+	    $wp_customize->add_control( 'consumer_key', array(
+	        'label'    => 'Twitter App Consumer Key',
+	        'section'  => 'twitter_tracker_options',
+	        'type'     => 'text',
+	        'settings' => 'consumer_key',
+	    ) );
+	    $wp_customize->add_control( 'consumer_secret', array(
+	        'label'    => 'Twitter App Consumer Secret',
+	        'section'  => 'twitter_tracker_options',
+	        'type'     => 'text',
+	        'settings' => 'consumer_secret',
+	    ) );
+	}
 
 	/**
 	 * Register a WordPress filter and map it back to the calling object
