@@ -293,12 +293,6 @@ class TT_Twitter_Authentication {
 			'user_id'            => null,
 			'screen_name'        => null
 
-			/*
-			'oauth_token_secret' => 'k3LiGgvn5SKCaam8rqbD6PBoyV8nTvW0kyeCk40xNVg2v',
-			'authenticated'      => false,
-			'user_id'            => '831445423',
-			'screen_name'        => 'stef_karas',
-			*/
 		);
 		$creds_option = get_option( 'tt_twitter_creds', array() );
 		$this->creds = wp_parse_args( $creds_option, $creds_defaults );
