@@ -94,7 +94,49 @@ class TT_Service {
 		}
 
 	}
+	public function request_tweet( $twitter_tweet, $args = array() ) {
 
+		if ( is_wp_error( $connection = $this->get_connection() ) ) {
+			return $connection;
+		}
+
+		$defaults = array( 
+			'count'           => 20,
+			'exclude_replies' => false,
+		);
+		$args = wp_parse_args( $args, $defaults );
+
+		array_walk( $args, array( $this, 'bool_to_str' ) );
+
+		$args[ 'id' ] = $twitter_tweet;
+		$args[ 'contributor_details' ] = true;
+		$args[ 'include_entities' ] = true;
+		$args[ 'tweet_mode' ] = 'extended'; // to include media
+		
+		
+
+		$response = $connection->get( sprintf( '%s/statuses/show.json', untrailingslashit( $connection->host ) ), $args );
+
+		//var_dump( $response );exit();
+		// var_dump( $connection );
+
+		# @TODO switch the twitter oauth class over to wp http api:
+		if ( 200 == $connection->http_code ) {
+
+			return $this->tweet_response( $response );
+
+		} else {
+
+			return new WP_Error(
+				'tt_twitter_failed_request',
+				sprintf( __( 'Could not connect to Twitter (error %s).', 'twitter-tracker' ),
+					esc_html( $connection->http_code )
+				)
+			);
+
+		}
+
+	}
 	public static function status_url( $status ) {
 
 		return sprintf( 'https://twitter.com/%s/status/%s',
@@ -105,8 +147,10 @@ class TT_Service {
 	}
 
 	public static function status_content( $status ) {
-
 		$text = $status->text;
+		if (!$text) { // if extended status is requested (single tweet) the text is in the full text attribute
+			$text = $status->full_text;
+		}
 
 		# @TODO more processing (hashtags, @s etc)
 		$text = make_clickable( $text );
@@ -161,8 +205,12 @@ class TT_Service {
 
 		$response = new TT_Response;
 
-		if ( !isset( $r->statuses ) or empty( $r->statuses ) )
-			return $response;
+		if ( !isset( $r->statuses ) or empty( $r->statuses ) ) {
+			return new WP_Error(
+					'tt_twitter_empty_response',
+					__( 'Twitter returned an empty response.', 'twitter-tracker' )
+				);
+		}
 
 		$this->response_statuses( $response, $r->statuses );
 
@@ -177,7 +225,6 @@ class TT_Service {
 					'tt_twitter_empty_response',
 					__( 'Twitter returned an empty response.', 'twitter-tracker' )
 				);
-			return false;
 		}
 
 		$response = new TT_Response;
@@ -186,7 +233,21 @@ class TT_Service {
 		return $response;
 
 	}
+	public function tweet_response( $status ) {
 
+		if ( !isset( $status ) or empty( $status ) ) {
+			return new WP_Error(
+					'tt_twitter_empty_response',
+					__( 'Twitter returned an empty response.', 'twitter-tracker' )
+				);
+		}
+
+		$response = new TT_Response;
+		$this->response_tweet( $response, $status );
+
+		return $response;
+
+	}
 	public function response_statuses( & $response, $statuses ) {
 		foreach ( $statuses as $status ) {
 
@@ -210,6 +271,35 @@ class TT_Service {
 			$response->add_item( $item );
 
 		}
+		return $response;
+	}
+
+	public function response_tweet( & $response, $status ) {
+		$item = new TT_Tweet;
+
+		// @TODO Check protected status and drop tweets with it
+		if ($status) {
+			//print_r($status);
+			$item->set_id( $status->id_str );
+			$item->set_link( self::status_url( $status ) );
+			$item->set_content( self::status_content( $status ) );
+			$item->set_timestamp( strtotime( $status->created_at ) );
+			$item->set_twit( $status->user->screen_name );
+			$item->set_twit_name( $status->user->name );
+			$item->set_twit_uid( $status->user->id_str );
+			$item->set_retweeted( self::status_retweeted( $status ) );
+			$item->set_original_twit( self::status_original_twit( $status ) );
+			$item->set_reply_to( $status->in_reply_to_status_id_str );
+			$item->set_hashtags( self::status_hashtags( $status ) );
+			$item->set_thumbnail( self::status_avatar( $status ) );
+
+			if ($status->entities->media && is_array($status->entities->media) && count($status->entities->media) > 0) {
+				$item->set_media_url( $status->entities->media[0]->media_url_https );
+			}
+		}
+
+		$response->add_item( $item );
+
 		return $response;
 	}
 

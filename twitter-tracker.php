@@ -58,6 +58,7 @@ Author URI: http://codeforthepeople.com/
 require_once( dirname (__FILE__) . '/plugin.php' );
 require_once( dirname (__FILE__) . '/class-TwitterTracker_Widget.php' );
 require_once( dirname (__FILE__) . '/class-TwitterTracker_Profile_Widget.php' );
+require_once( dirname (__FILE__) . '/class-TwitterTracker_Tweet_Widget.php' );
 require_once( dirname (__FILE__) . '/class.twitter-authentication.php' );
 
 /**
@@ -87,6 +88,7 @@ class TwitterTracker extends TwitterTracker_Plugin
 		// register widget
 		add_action('widgets_init', create_function('', 'return register_widget( "TwitterTracker_Widget" );'));
 		add_action('widgets_init', create_function('', 'return register_widget( "TwitterTracker_Profile_Widget" );'));
+		add_action('widgets_init', create_function('', 'return register_widget( "TwitterTracker_Tweet_Widget" );'));
 	}
 	
 	// DOING IT WRONG
@@ -299,7 +301,7 @@ class TwitterTracker extends TwitterTracker_Plugin
 		echo PHP_EOL . "<!-- Regenerating cache $transient_key at " . current_time( 'mysql' ) . " -->" . PHP_EOL;
 		echo $output;
 		$output = PHP_EOL . "<!-- Retrieved from $transient_key, cached at " . current_time( 'mysql' ) . " -->" . PHP_EOL . $output;
-		set_transient( $transient_key, $output, apply_filters( 'tt_cache_expiry', 300, $transient_key, $args ) );
+		set_transient( $transient_key, $output, apply_filters( 'tt_cache_expiry', trim(get_theme_mod( 'cache_expiry' )), $transient_key, $args ) );
 	}
 
 	public function show_profile( $instance = array() )
@@ -393,9 +395,91 @@ class TwitterTracker extends TwitterTracker_Plugin
 		echo PHP_EOL . "<!-- Regenerating cache $transient_key at " . current_time( 'mysql' ) . " -->" . PHP_EOL;
 		echo $output;
 		$output = PHP_EOL . "<!-- Retrieved from $transient_key, cached at " . current_time( 'mysql' ) . " -->" . PHP_EOL . $output;
-		set_transient( $transient_key, $output, apply_filters( 'tt_cache_expiry', 300, $transient_key, $username, $args ) );
+		set_transient( $transient_key, $output, apply_filters( 'tt_cache_expiry', trim(get_theme_mod( 'cache_expiry' )), $transient_key, $username, $args ) );
 	}
+	public function show_tweet( $instance = array() )
+	{
+		$defaults = array (
+			'convert_emoji' => 'hide',
+			'hide_replies' => false,
+			'include_retweets' => false,
+			'html_after' => '',
+			'preamble' => '',
+		);
+		$instance = wp_parse_args( $instance, $defaults );
 
+		extract( $instance );
+
+
+		// Let the user know if there's no search query
+		$twitter_tweet = trim( $twitter_tweet );
+		if ( empty( $twitter_tweet ) ) {
+			$vars = array( 
+				'msg' => __( 'For this Twitter Tracker tweet widget to work you need to set at least a Twitter tweet in the widget settings.', 'twitter-tracker' ),
+				'additional_error_class' => '',
+				'strong' => true,
+			);
+			$this->render( 'widget-error', $vars );
+			return;
+		}
+
+		// Let the user know if there's no auth
+		if ( ! TT_Twitter_Authentication::init()->is_authenticated() ) {
+			$vars = array( 
+				'msg' => __( 'For this Twitter Tracker profile widget to work you need to authorise with Twitter in "Dashboard" -> "Settings" -> "Twitter Tracker Auth".', 'twitter-tracker' ),
+				'additional_error_class' => '',
+				'strong' => true,
+			);
+			$this->render( 'widget-error', $vars );
+			return;
+		}
+
+		require_once( 'class.oauth.php' );
+		require_once( 'class.wp-twitter-oauth.php' );
+		require_once( 'class.response.php' );
+		require_once( 'class.twitter-service.php' );
+
+		$args = array(
+			'count' => max( ($max_tweets * 4), 200 ), // Get *lots* as we have to throw some away later
+		);
+
+		$transient_key = 'tt_tweet-' . md5( serialize( $instance ) . $twitter_tweet . serialize( $args ) );
+
+		if ( $output = get_transient( $transient_key ) ) {
+			echo $output;
+			return;
+		}
+
+		$service = new TT_Service;
+		$response = $service->request_tweet( $twitter_tweet, $args );
+
+		if ( is_wp_error( $response ) ) {
+			error_log( "Twitter Tracker response error: " . print_r( $response, true ) );
+			return;
+		}
+
+		if ( $hide_replies )
+			$response->remove_replies();
+
+		if ( ! $include_retweets )
+			$response->remove_retweets();
+
+		$response->convert_emoji();
+
+
+		// @TODO Setup a method for the default vars needed
+		$vars = array( 
+			'tweets' => array_slice( $response->items, 0, $max_tweets ),
+			'preamble' => $preamble,
+			'html_after' => $html_after,
+		);
+		$vars[ 'datef' ] = _x( 'M j, Y @ G:i', 'Publish box date format', 'twitter-tracker' );
+		$output = $this->capture( 'widget-contents-tweet', $vars );
+		echo PHP_EOL . "<!-- Regenerating cache $transient_key at " . current_time( 'mysql' ) . " -->" . PHP_EOL;
+		echo $output;
+		$output = PHP_EOL . "<!-- Retrieved from $transient_key, cached at " . current_time( 'mysql' ) . " -->" . PHP_EOL . $output;
+		set_transient( $transient_key, $output, apply_filters( 'tt_cache_expiry', trim(get_theme_mod( 'cache_expiry' )), $transient_key, $username, $args ) );
+	}
 	public static function & get()
 	{
 	    static $instance;
@@ -422,7 +506,11 @@ function twitter_tracker_profile( $instance )
 	$tracker->show_profile( $instance );
 }
 
-
+function twitter_tracker_tweet( $instance )
+{
+	$tracker = TwitterTracker::get();
+	$tracker->show_tweet( $instance );
+}
 /**
  * Instantiate the plugin
  *

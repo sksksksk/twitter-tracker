@@ -97,6 +97,7 @@ final class TT_Tweet {
 	public $in_reply_to_status_id_str; // The Twitter status ID this is in response to, as string
 	public $hashtags; // An array of hashtags as strings
 
+	public $media_url;
 	/**
 	 * Set the Twitter ID
 	 *
@@ -141,6 +142,17 @@ final class TT_Tweet {
 	 **/
 	public function set_link( $url ) {
 		$this->link = esc_url_raw( $url );
+	}
+
+	/**
+	 * Set the Media URL
+	 *
+	 * @param string $url The Media URL
+	 * @return void
+	 * @author sk
+	 **/
+	public function set_media_url( $url ) {
+		$this->media_url = esc_url_raw( $url );
 	}
 
 	/**

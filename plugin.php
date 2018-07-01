@@ -164,6 +164,7 @@ class TwitterTracker_Plugin
 
 	    $wp_customize->add_setting('consumer_key');
 	    $wp_customize->add_setting('consumer_secret');
+	    $wp_customize->add_setting('cache_expiry');
 
 	    $wp_customize->add_control( 'consumer_key', array(
 	        'label'    => 'Twitter App Consumer Key',
@@ -176,6 +177,13 @@ class TwitterTracker_Plugin
 	        'section'  => 'twitter_tracker_options',
 	        'type'     => 'text',
 	        'settings' => 'consumer_secret',
+	    ) );
+	    $wp_customize->add_control( 'cache_expiry', array(
+	        'label'    => 'Cache in seconds',
+	        'section'  => 'twitter_tracker_options',
+	        'type'     => 'number',
+	        'settings' => 'cache_expiry',
+	        'input_attrs' => array( 'min' => 1, 'max' => 3000, 'step'  => 10 )
 	    ) );
 	}
 
