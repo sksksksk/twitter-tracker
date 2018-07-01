@@ -89,6 +89,9 @@ class TwitterTracker extends TwitterTracker_Plugin
 		add_action('widgets_init', create_function('', 'return register_widget( "TwitterTracker_Widget" );'));
 		add_action('widgets_init', create_function('', 'return register_widget( "TwitterTracker_Profile_Widget" );'));
 		add_action('widgets_init', create_function('', 'return register_widget( "TwitterTracker_Tweet_Widget" );'));
+
+
+
 	}
 	
 	// DOING IT WRONG
@@ -397,7 +400,7 @@ class TwitterTracker extends TwitterTracker_Plugin
 		$output = PHP_EOL . "<!-- Retrieved from $transient_key, cached at " . current_time( 'mysql' ) . " -->" . PHP_EOL . $output;
 		set_transient( $transient_key, $output, apply_filters( 'tt_cache_expiry', trim(get_theme_mod( 'cache_expiry' )), $transient_key, $username, $args ) );
 	}
-	public function show_tweet( $instance = array() )
+	public function show_tweet( $instance = array(), $returnOutput = false)
 	{
 		$defaults = array (
 			'convert_emoji' => 'hide',
@@ -476,9 +479,14 @@ class TwitterTracker extends TwitterTracker_Plugin
 		$vars[ 'datef' ] = _x( 'M j, Y @ G:i', 'Publish box date format', 'twitter-tracker' );
 		$output = $this->capture( 'widget-contents-tweet', $vars );
 		echo PHP_EOL . "<!-- Regenerating cache $transient_key at " . current_time( 'mysql' ) . " -->" . PHP_EOL;
-		echo $output;
-		$output = PHP_EOL . "<!-- Retrieved from $transient_key, cached at " . current_time( 'mysql' ) . " -->" . PHP_EOL . $output;
-		set_transient( $transient_key, $output, apply_filters( 'tt_cache_expiry', trim(get_theme_mod( 'cache_expiry' )), $transient_key, $username, $args ) );
+		if (!$returnOutput) {
+			echo $output;
+		}
+		$outputTransient = PHP_EOL . "<!-- Retrieved from $transient_key, cached at " . current_time( 'mysql' ) . " -->" . PHP_EOL . $output;
+		set_transient( $transient_key, $outputTransient, apply_filters( 'tt_cache_expiry', trim(get_theme_mod( 'cache_expiry' )), $transient_key, $username, $args ) );
+		if ($returnOutput) {
+			return $output;
+		}
 	}
 	public static function & get()
 	{
@@ -506,10 +514,13 @@ function twitter_tracker_profile( $instance )
 	$tracker->show_profile( $instance );
 }
 
-function twitter_tracker_tweet( $instance )
+function twitter_tracker_tweet( $instance, $returnOutput = false )
 {
 	$tracker = TwitterTracker::get();
-	$tracker->show_tweet( $instance );
+	$returned = $tracker->show_tweet( $instance, $returnOutput );
+	if ($returned) {
+		return $returned;
+	}
 }
 /**
  * Instantiate the plugin

@@ -125,8 +125,21 @@ class TwitterTracker_Plugin
 
 		$this->add_action ('customize_register', 'twitter_tracker_customizer_settings');
 
+
+		add_shortcode( 'tt_tweet', array( 'TwitterTracker_Plugin', 'tt_tweet' ) );
 	}
-	
+
+
+	public static function tt_tweet( $atts, $content = "" ) {
+		$atts = shortcode_atts( array(
+			'twitter_tweet' => null
+		), $atts, 'tt_tweet' );
+
+		$tt = new TwitterTracker_Tweet_Widget();
+		$widgetContent = $tt->theWidget([], ['twitter_tweet' => '994150363476512768'], true);
+		return $widgetContent;
+	}
+
 	function load_locale ()
 	{
 		// Here we manually fudge the plugin locale as WP doesnt allow many options

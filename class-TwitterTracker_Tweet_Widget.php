@@ -35,6 +35,11 @@ class TwitterTracker_Tweet_Widget extends TwitterTracker_SW_Widget {
 
     /** @see WP_Widget::widget */
     function widget($args, $instance) {
+        $this->theWidget($args, $instance, false);
+    }
+
+
+    function theWidget($args, $instance, $returnOutput) {
         extract( $args );
         extract( $instance );
 
@@ -43,13 +48,38 @@ class TwitterTracker_Tweet_Widget extends TwitterTracker_SW_Widget {
 		// Add any additional classes
 		$before_widget = $this->add_classes( $before_widget, $class );
 		
-		echo $before_widget;
+		$result = '';
+		if (!$returnOutput) {
+			echo $before_widget;
+		}
+		else {
+			$result .= $before_widget;
+		}
 
-		if ( $title ) echo $before_title . $title . $after_title;
+		if ( $title ) {
+			if (!$returnOutput) {
+				echo $before_title . $title . $after_title;
+			}
+			else {
+				$result .= $before_title . $title . $after_title;;
+			}
+		}
 
-		twitter_tracker_tweet( $instance );
+		$returned = twitter_tracker_tweet( $instance, $returnOutput );
 
-		echo $after_widget;
+		if ($returnOutput) {
+			$result .= $returned;
+		}
+		if (!$returnOutput) {
+			echo $after_widget;
+		}
+		else {
+			$result .= $before_widget;
+		}
+
+		if ($returnOutput) {
+			return $result;
+		}
     }
 
     /** @see WP_Widget::update */
