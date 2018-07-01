@@ -134,9 +134,9 @@ class TwitterTracker_Plugin
 		$atts = shortcode_atts( array(
 			'twitter_tweet' => null
 		), $atts, 'tt_tweet' );
-
 		$tt = new TwitterTracker_Tweet_Widget();
-		$widgetContent = $tt->theWidget([], ['twitter_tweet' => '994150363476512768'], true);
+		$widgetContent = $tt->theWidget([], $atts, true);
+		//$widgetContent = $tt->theWidget([], ['twitter_tweet' => '994150363476512768'], true);
 		return $widgetContent;
 	}
 
