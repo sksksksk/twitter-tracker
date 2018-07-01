@@ -57,8 +57,9 @@ class TT_Service {
 
 	public function request_user_timeline( $screen_name, $args = array() ) {
 
-		if ( is_wp_error( $connection = $this->get_connection() ) )
+		if ( is_wp_error( $connection = $this->get_connection() ) ) {
 			return $connection;
+		}
 
 		$defaults = array( 
 			'count'           => 20,
@@ -171,8 +172,13 @@ class TT_Service {
 
 	public function timeline_response( $statuses ) {
 
-		if ( !isset( $statuses ) or empty( $statuses ) )
+		if ( !isset( $statuses ) or empty( $statuses ) ) {
+			return new WP_Error(
+					'tt_twitter_empty_response',
+					__( 'Twitter returned an empty response.', 'twitter-tracker' )
+				);
 			return false;
+		}
 
 		$response = new TT_Response;
 		$this->response_statuses( $response, $statuses );

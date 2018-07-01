@@ -391,6 +391,8 @@ class TwitterTracker_Plugin
 			return str_replace ('\\', urlencode ('\\'), str_replace ('&amp;amp', '&amp;', str_replace ('&', '&amp;', $url)));
 		else
 		{
+			return plugins_url('/twitter-tracker','');
+			/*
 			$root = ABSPATH;
 			if (defined ('WP_PLUGIN_DIR'))
 				$root = WP_PLUGIN_DIR;
@@ -408,6 +410,7 @@ class TwitterTracker_Plugin
 			global $is_IIS;
 			if (isset ($_SERVER['HTTPS']) && !$is_IIS)
 				$url = str_replace ('http://', 'https://', $url);
+				*/
 		}
 		return $url;
 	}
