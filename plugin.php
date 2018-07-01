@@ -127,6 +127,10 @@ class TwitterTracker_Plugin
 
 
 		add_shortcode( 'tt_tweet', array( 'TwitterTracker_Plugin', 'tt_tweet' ) );
+		
+		add_filter( 'embed_oembed_html', array( 'TwitterTracker_Plugin', 'tt_tweet_oembed' ),10, 4 );
+
+
 	}
 
 
@@ -138,6 +142,18 @@ class TwitterTracker_Plugin
 		$widgetContent = $tt->theWidget([], $atts, true);
 		//$widgetContent = $tt->theWidget([], ['twitter_tweet' => '994150363476512768'], true);
 		return $widgetContent;
+	}
+	public static function tt_tweet_oembed( $cache, $url, $attr, $post_ID ) {
+		if (get_theme_mod( 'replace_oembed_tweet' )) {
+		    if ( false !== strpos( $url, 'https://twitter.com' ) &&  false !== strpos( $url, '/status/' ) ) {
+		    	$statusId = $id = basename($url);
+		    	$atts = ['twitter_tweet' => $statusId];
+	//	    	$atts['twitter_tweet'] = '994150363476512768';
+		    	$tt = new TwitterTracker_Tweet_Widget();
+		        return $tt->theWidget([], $atts, true);
+		    }
+		}
+		return $cache;
 	}
 
 	function load_locale ()
@@ -178,6 +194,7 @@ class TwitterTracker_Plugin
 	    $wp_customize->add_setting('consumer_key');
 	    $wp_customize->add_setting('consumer_secret');
 	    $wp_customize->add_setting('cache_expiry');
+	    $wp_customize->add_setting('replace_oembed_tweet');
 
 	    $wp_customize->add_control( 'consumer_key', array(
 	        'label'    => 'Twitter App Consumer Key',
@@ -197,6 +214,12 @@ class TwitterTracker_Plugin
 	        'type'     => 'number',
 	        'settings' => 'cache_expiry',
 	        'input_attrs' => array( 'min' => 1, 'max' => 3000, 'step'  => 10 )
+	    ) );
+	    $wp_customize->add_control( 'replace_oembed_tweet', array(
+	        'label'    => 'Replace oembed twitter status',
+	        'section'  => 'twitter_tracker_options',
+	        'type'     => 'checkbox',
+	        'settings' => 'replace_oembed_tweet',
 	    ) );
 	}
 
